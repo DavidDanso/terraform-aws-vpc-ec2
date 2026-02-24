@@ -1,6 +1,6 @@
 output "vpc_id" {
-    description = ""
-    value = aws_vpc.main.id
+  description = ""
+  value       = aws_vpc.main.id
 }
 
 output "public_ip" {

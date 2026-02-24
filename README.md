@@ -1,78 +1,133 @@
-# VPC and EC2 Web Server Foundation
+<div align="center">
+  <h1>🚀 AWS VPC & EC2 Web Server Foundation</h1>
+  <p><i>Infrastructure-as-Code fundamentals demonstrating Terraform and AWS networking expertise.</i></p>
 
-This project sets up a foundational AWS infrastructure using Terraform. It provisions a custom Virtual Private Cloud (VPC), public and private subnets across multiple Availability Zones, and an EC2 instance running an Nginx web server. The infrastructure is primarily configured through standard variables for custom CIDR blocks and instances.
+  <!-- Badges -->
+  <img src="https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform" />
+  <img src="https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white" alt="AWS" />
+  <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx" />
+</div>
 
-## Architecture
+<br />
 
-This project creates the following AWS resources:
-- 1 VPC
-- 2 Public Subnets (one per AZ)
-- 2 Private Subnets (one per AZ)
-- 1 Internet Gateway
-- 1 Route Table for the public subnets
-- 2 Route Table Associations
-- 1 Security Group (Allows SSH, HTTP/HTTPS inbound; allows all outbound)
-- 1 EC2 Instance (Amazon Linux 2023) running Nginx
-- 1 Elastic IP assigned to the EC2 instance
-- Dynamically generated SSH Key Pair (RSA 4096) mapped to the EC2 instance
+## 📋 Overview
 
-## Prerequisites
+This project provisions a secure, custom AWS Virtual Private Cloud (VPC) from scratch using **HashiCorp Terraform**. It dynamically deploys public and private subnets across multiple Availability Zones, sets up routing and internet access, and provisions an EC2 instance running an Nginx web server. 
 
-- [Terraform](https://developer.hashicorp.com/terraform/downloads) installed (~> 6.0).
-- An AWS account with your credentials configured locally (e.g., via `aws configure` or environment variables).
+### Why This Project Matters
+This repository serves as a foundational demonstration of **Infrastructure-as-Code (IaC)** principles. It proves a practical understanding of:
+- **Terraform Workflows:** State management, variables, outputs, and the `init`/`plan`/`apply`/`destroy` lifecycle.
+- **AWS Networking:** VPCs, CIDR block division, Internet Gateways, Route Tables, and Security Groups.
+- **Compute Provisioning:** Automating EC2 deployments with bootstrap scripts (User Data) and dynamically generated SSH keys.
 
-## Project Structure
+---
 
-```text
-├── main.tf             # Core resource definitions (VPC, Subnets, EC2, Key Pair, Security Group)
-├── variables.tf        # Variable declarations (CIDRs, region, etc.)
-├── outputs.tf          # Output definitions (VPC ID, Public IP, SSH connection string)
-├── provider.tf         # AWS Provider configuration
-├── terraform.tfvars    # User-provided values for variables
-└── .gitignore          # Ignored files, including sensitive state and private keys
+## 🏗️ Architecture
+
+The infrastructure is designed with security and high availability in mind, featuring:
+
+- **Custom VPC** with a configurable CIDR block.
+- **4 Subnets** across 2 Availability Zones (2 Public, 2 Private) for high availability.
+- **Internet Gateway & Route Tables** bridging the public subnets to the internet.
+- **Security Groups** restricting ingress strictly to HTTP/HTTPS (`80`, `443`) and SSH (`22`).
+- **EC2 Web Server** running Amazon Linux 2023, automatically bootstrapped with Nginx.
+- **Elastic IP (EIP)** for static public access.
+- **Dynamic TLS Key Generation** for secure, automated SSH access without hardcoded keys.
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+
+* [Terraform](https://developer.hashicorp.com/terraform/downloads) CLI (`~> 6.0`)
+* AWS CLI installed and configured (`aws configure`) with valid credentials.
+
+### 1. Clone & Configure
+
+```bash
+git clone https://github.com/yourusername/vpc-ec2-web-server.git
+cd vpc-ec2-web-server
 ```
 
-## Quick Start Guide
+Open `terraform.tfvars` to customize your variables. Update `ami_id` to a valid Amazon Linux AMI in your chosen `aws_region`:
 
-### 1. Configure the Variables
-Locate the `terraform.tfvars` file and modify the values as needed. Make sure you set a valid `ami_id` for your target `aws_region`.
 ```hcl
 aws_region           = "us-east-1"
-instance_type        = "t2.small"
-ami_id               = "ami-0f3caa1cf4417e51b" # Amazon Linux 2023 in us-east-1
+instance_type        = "t2.micro"
+ami_id               = "ami-0f3caa1cf4417e51b" # Ensure this matches your region!
 key_name             = "vpc-ec2-web-server-keyPair"
 ```
 
 ### 2. Initialize Terraform
-Run initialization to download the necessary AWS, local, and TLS providers.
+Downloads the required AWS, TLS, and Local providers.
 ```bash
 terraform init
 ```
 
-### 3. Review the Execution Plan
-Always validate and preview your changes before applying them. 
+### 3. Plan the Deployment
+Validates the configuration and previews the resources Terraform will create.
 ```bash
 terraform validate
 terraform plan
 ```
 
-### 4. Apply the Configuration
-Deploy the infrastructure to your AWS account. Terraform will prompt you to type `yes` before proceeding.
+### 4. Apply the Infrastructure
+Provisions the resources in your AWS account. Type `yes` when prompted.
 ```bash
 terraform apply
 ```
 
-### 5. Access the Web Server
-Once the deployment finishes, Terraform will output your new SSH connection string and the public IP.
-- **View Nginx:** Open your browser and navigate to `http://<public_ip>`.
-- **SSH into the instance:** Due to the TLS key-pair generation, Terraform automatically creates the private key locally. Make sure your key has the right permissions and use the SSH string from `terraform output`:
-  ```bash
-  chmod 400 <key_name>.pem
-  ssh -i <key_name>.pem ec2-user@<public_ip>
-  ```
+---
 
-### 6. Clean Up
-To remove all AWS resources created by this project and avoid incurring further charges:
+## 🧪 Verification & Testing
+
+Once `terraform apply` completes successfully, Terraform will output your `public_dns`, `public_ip`, and `ssh_connection_string`.
+
+### Access the Web Server
+Verify Nginx is running by navigating to the public IP in your browser:
+```bash
+http://<public_ip>
+```
+*(You should see the default Nginx welcome page!)*
+
+### SSH into the Instance
+Terraform securely generates a local `.pem` key for you. Make sure the file permissions are restricted, then use the provided output string to connect:
+
+```bash
+# Secure the private key
+chmod 400 vpc-ec2-web-server-keyPair.pem
+
+# Connect using the generated output string
+ssh -i vpc-ec2-web-server-keyPair.pem ec2-user@<public_ip>
+```
+
+---
+
+## 🧹 Clean Up
+
+To prevent ongoing AWS charges, ensure you destroy the infrastructure when you are finished:
+
 ```bash
 terraform destroy
 ```
+*(Type `yes` when prompted to remove all resources cleanly.)*
+
+---
+
+## 📂 Project Structure
+
+| File | Purpose |
+| :--- | :--- |
+| `main.tf` | Core infrastructure definitions (VPC, Subnets, EC2, Keys, SG). |
+| `variables.tf` | Input definitions for modularity and reuse. |
+| `outputs.tf` | Exports the required endpoints (IP, SSH command). |
+| `provider.tf` | AWS Provider configuration and version constraints. |
+| `terraform.tfvars`| User-defined value assignments for variables. |
+| `.gitignore` | Security best practices (ignores state files, tfvars, and keys). |
+
+---
+
+<div align="center">
+  <i>Built with ❤️ using Terraform and AWS</i>
+</div>
