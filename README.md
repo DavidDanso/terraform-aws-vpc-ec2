@@ -1,6 +1,5 @@
 <div align="center">
   <h1>🚀 AWS VPC & EC2 Web Server Foundation</h1>
-  <p><i>Infrastructure-as-Code fundamentals demonstrating Terraform and AWS networking expertise.</i></p>
 
   <!-- Badges -->
   <img src="https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform" />
@@ -46,8 +45,8 @@ The infrastructure is designed with security and high availability in mind, feat
 ### 1. Clone & Configure
 
 ```bash
-git clone https://github.com/yourusername/vpc-ec2-web-server.git
-cd vpc-ec2-web-server
+git clone https://github.com/DavidDanso/terraform-aws-vpc-ec2.git
+cd terraform-aws-vpc-ec2
 ```
 
 Open `terraform.tfvars` to customize your variables. Update `ami_id` to a valid Amazon Linux AMI in your chosen `aws_region`:
