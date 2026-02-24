@@ -76,6 +76,3 @@ To remove all AWS resources created by this project and avoid incurring further 
 ```bash
 terraform destroy
 ```
-
-## Important Version Control Notice:
-Your `terraform.tfvars` file might contain sensitive items. Similarly, your generated `.pem` keys, `.terraform` folder, and `.tfstate` files **should never be submitted to version control**. This repository includes a `.gitignore` that handles these exclusions automatically.
