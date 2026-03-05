@@ -1,5 +1,6 @@
 <div align="center">
-  <h1>🚀 AWS VPC & EC2 Web Server Foundation</h1>
+  <h1>🚀 AWS Modular Infrastructure: VPC & EC2 Deployment</h1>
+  <p><i>A scalable, reusable Infrastructure-as-Code foundation demonstrating Terraform modules and AWS networking expertise.</i></p>
 
   <!-- Badges -->
   <img src="https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform" />
@@ -11,27 +12,34 @@
 
 ## 📋 Overview
 
-This project provisions a secure, custom AWS Virtual Private Cloud (VPC) from scratch using **HashiCorp Terraform**. It dynamically deploys public and private subnets across multiple Availability Zones, sets up routing and internet access, and provisions an EC2 instance running an Nginx web server. 
+This project provisions a secure, custom AWS Virtual Private Cloud (VPC) and automates EC2 compute deployments using **HashiCorp Terraform**. It has been specifically designed using a **modular architecture** to maximize reusability, maintainability, and scalability.
 
 ### Why This Project Matters
-This repository serves as a foundational demonstration of **Infrastructure-as-Code (IaC)** principles. It proves a practical understanding of:
-- **Terraform Workflows:** State management, variables, outputs, and the `init`/`plan`/`apply`/`destroy` lifecycle.
-- **AWS Networking:** VPCs, CIDR block division, Internet Gateways, Route Tables, and Security Groups.
-- **Compute Provisioning:** Automating EC2 deployments with bootstrap scripts (User Data) and dynamically generated SSH keys.
+This repository serves as an advanced demonstration of **Infrastructure-as-Code (IaC)** principles. It proves a practical understanding of:
+- **Module Composition:** Encapsulating logic into independent `networking`, `security`, and `compute` modules with strict input/output boundaries.
+- **Resource Scaling:** Using Terraform's `count` meta-argument to dynamically scale the number of compute instances deployed (e.g., 1 for Dev, 3 for Prod).
+- **Variable Validation:** Enforcing infrastructure compliance natively within Terraform to ensure deployed instances stay within the AWS Free Tier.
+- **AWS Networking:** Configuring VPCs, subnets, Internet Gateways, Route Tables, and Security Groups seamlessly.
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Modular Architecture
 
-The infrastructure is designed with security and high availability in mind, featuring:
+The infrastructure is broken down into three independent, reusable modules:
 
-- **Custom VPC** with a configurable CIDR block.
-- **4 Subnets** across 2 Availability Zones (2 Public, 2 Private) for high availability.
-- **Internet Gateway & Route Tables** bridging the public subnets to the internet.
-- **Security Groups** restricting ingress strictly to HTTP/HTTPS (`80`, `443`) and SSH (`22`).
-- **EC2 Web Server** running Amazon Linux 2023, automatically bootstrapped with Nginx.
-- **Elastic IP (EIP)** for static public access.
-- **Dynamic TLS Key Generation** for secure, automated SSH access without hardcoded keys.
+1. **`networking` Module:**
+   - Creates a **Custom VPC** with a configurable CIDR block.
+   - Deploys **4 Subnets** across 2 Availability Zones (2 Public, 2 Private).
+   - Manages the **Internet Gateway** and **Route Tables**.
+   
+2. **`security` Module:**
+   - Deploys **Security Groups** restricting ingress strictly to HTTP/HTTPS (`80`, `443`) and SSH (`22`), isolating it from the network deployment.
+
+3. **`compute` Module:**
+   - Deploys variable counts of **EC2 Web Servers** running Amazon Linux 2023.
+   - Bootstraps servers automatically with Nginx.
+   - Generates **Dynamic TLS Key Pairs** for secure, automated SSH access.
+   - Attaches and maps **Elastic IPs (EIP)** to the running instances.
 
 ---
 
@@ -49,17 +57,18 @@ git clone https://github.com/DavidDanso/terraform-aws-vpc-ec2.git
 cd terraform-aws-vpc-ec2
 ```
 
-Open `terraform.tfvars` to customize your variables. Update `ami_id` to a valid Amazon Linux AMI in your chosen `aws_region`:
+Open `terraform.tfvars` in the root directory to customize your deployment. Notice you can scale the architecture using `instance_count`:
 
 ```hcl
 aws_region           = "us-east-1"
-instance_type        = "t2.micro"
+instance_count       = 1            # Easily scale your footprint!
+instance_type        = "t2.micro"   # Strict validation ensures free tier usage
 ami_id               = "ami-0f3caa1cf4417e51b" # Ensure this matches your region!
 key_name             = "vpc-ec2-web-server-keyPair"
 ```
 
 ### 2. Initialize Terraform
-Downloads the required AWS, TLS, and Local providers.
+Downloads the required modules, AWS, TLS, and Local providers.
 ```bash
 terraform init
 ```
@@ -81,16 +90,16 @@ terraform apply
 
 ## 🧪 Verification & Testing
 
-Once `terraform apply` completes successfully, Terraform will output your `public_dns`, `public_ip`, and `ssh_connection_string`.
+Once `terraform apply` completes successfully, the root module will loop through the deployed instances and output lists of `public_dns`, `public_ips`, and `ssh_connection_strings`.
 
 ### Access the Web Server
-Verify Nginx is running by navigating to the public IP in your browser:
+Verify Nginx is running by navigating to a public IP in your browser:
 ```bash
 http://<public_ip>
 ```
 *(You should see the default Nginx welcome page!)*
 
-### SSH into the Instance
+### SSH into the Instances
 Terraform securely generates a local `.pem` key for you. Make sure the file permissions are restricted, then use the provided output string to connect:
 
 ```bash
@@ -105,24 +114,27 @@ ssh -i vpc-ec2-web-server-keyPair.pem ec2-user@<public_ip>
 
 ## 🧹 Clean Up
 
-To prevent ongoing AWS charges, ensure you destroy the infrastructure when you are finished:
+To prevent ongoing AWS charges, ensure you destroy the master infrastructure when you are finished:
 
 ```bash
 terraform destroy
 ```
-*(Type `yes` when prompted to remove all resources cleanly.)*
 
 ---
 
 ## 📂 Project Structure
 
-| File | Purpose |
+| Path/File | Purpose |
 | :--- | :--- |
-| `main.tf` | Core infrastructure definitions (VPC, Subnets, EC2, Keys, SG). |
-| `variables.tf` | Input definitions for modularity and reuse. |
-| `outputs.tf` | Exports the required endpoints (IP, SSH command). |
-| `provider.tf` | AWS Provider configuration and version constraints. |
-| `terraform.tfvars`| User-defined value assignments for variables. |
+| **`modules/`** | **Directory containing all encapsulated modules** |
+| `modules/networking/` | Provisions VPC, Subnets, IGW, and Route Tables. |
+| `modules/security/` | Provisions Security Groups. Requires VPC ID input. |
+| `modules/compute/` | Provisions EC2, EIPs, and SSH Keys. Validates inputs. |
+| **`Root Environment`** | **The main configuration uniting the modules** |
+| `main.tf` | Instantiates and wires the modules together. |
+| `variables.tf` | Root definitions for input logic. |
+| `outputs.tf` | Consolidates and exports module endpoints. |
+| `terraform.tfvars`| User-defined value assignments for deployment. |
 | `.gitignore` | Security best practices (ignores state files, tfvars, and keys). |
 
 ---
