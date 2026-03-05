@@ -1,3 +1,4 @@
-output "ssh_connection_string" {
-  value = "ssh -i ${var.key_name}.pem ec2-user@${aws_eip.web.public_ip}"
+output "security_group_id" {
+  description = "The ID of the security group"
+  value       = aws_security_group.web.id
 }

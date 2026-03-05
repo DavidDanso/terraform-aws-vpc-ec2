@@ -19,10 +19,11 @@ resource "local_file" "private_key" {
 
 # EC2 Instance
 resource "aws_instance" "web" {
+  count                  = var.instance_count
   ami                    = var.ami_id
   instance_type          = var.instance_type
-  vpc_security_group_ids = [aws_security_group.web.id]
-  subnet_id              = aws_subnet.public_1a.id
+  vpc_security_group_ids = [var.security_group_id]
+  subnet_id              = var.subnet_id
   key_name               = aws_key_pair.main.key_name
 
   # Install nginx on startup
@@ -35,16 +36,17 @@ resource "aws_instance" "web" {
   EOF
 
   tags = {
-    Name = "web-server"
+    Name = "web-server-${count.index + 1}"
   }
 }
 
 # Elastic IP
 resource "aws_eip" "web" {
-  instance = aws_instance.web.id
+  count    = var.instance_count
+  instance = aws_instance.web[count.index].id
   domain   = "vpc"
 
   tags = {
-    Name = "web-server-eip"
+    Name = "web-server-eip-${count.index + 1}"
   }
 }

@@ -2,7 +2,7 @@
 resource "aws_security_group" "web" {
   name        = "web-sg"
   description = "Allow SSH and HTTP/HTTPS inbound, all outbound"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = var.vpc_id
 
   # Ingress rules
   ingress {
